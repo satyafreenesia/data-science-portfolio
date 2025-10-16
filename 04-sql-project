@@ -1,0 +1,40 @@
+-- Chinook Invoice & Sales Analysis
+-- Download Chinook SQLite from Kaggle: https://www.kaggle.com/datasets/ranasabrii/chinook
+-- Or get SQL script from https://github.com/lerocha/chinook-database
+
+-- 1) Top 10 countries by number of invoices
+SELECT BillingCountry AS country, COUNT(InvoiceId) AS invoice_count
+FROM Invoice
+GROUP BY BillingCountry
+ORDER BY invoice_count DESC
+LIMIT 10;
+
+-- 2) For those top countries, top city by invoice count
+WITH top_countries AS (
+  SELECT BillingCountry AS country, COUNT(InvoiceId) AS invoice_count
+  FROM Invoice
+  GROUP BY BillingCountry
+  ORDER BY invoice_count DESC
+  LIMIT 10
+)
+SELECT i.BillingCountry AS country, i.BillingCity AS city, COUNT(i.InvoiceId) AS invoice_count
+FROM Invoice i
+JOIN top_countries tc ON i.BillingCountry = tc.country
+GROUP BY i.BillingCountry, i.BillingCity
+ORDER BY tc.invoice_count DESC, invoice_count DESC;
+
+-- 3) Total sales per genre
+SELECT g.Name AS genre, SUM(ii.UnitPrice * ii.Quantity) AS total_sales
+FROM InvoiceLine ii
+JOIN Track t ON ii.TrackId = t.TrackId
+JOIN Genre g ON t.GenreId = g.GenreId
+GROUP BY g.GenreId, g.Name
+ORDER BY total_sales DESC;
+
+-- 4) Average invoice total per customer
+SELECT c.FirstName || ' ' || c.LastName AS customer, AVG(i.Total) AS avg_invoice
+FROM Customer c
+JOIN Invoice i ON c.CustomerId = i.CustomerId
+GROUP BY c.CustomerId
+ORDER BY avg_invoice DESC
+LIMIT 20;
